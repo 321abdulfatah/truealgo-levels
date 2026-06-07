@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True ALGO Levels — How They're Really Calculated</title>
+<style>
+  :root{--bg:#0e1116;--card:#171c24;--card2:#1e2530;--ink:#e8edf4;--mut:#9aa7b8;--acc:#5ec2ff;
+        --up:#00e676;--dn:#ff1744;--inner:#ffd54f;--innerlow:#ff9800;--line:#2a3340;--teal:#26c6da;
+        --warn:#ffc24a;--good:#46d67e;--bad:#ff6b6b}
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Segoe UI",system-ui,Arial}
+  body.rtl{direction:rtl;font-family:"Segoe UI",Tahoma,Arial}
+  .wrap{max-width:1020px;margin:0 auto;padding:20px}
+  .topbar{position:sticky;top:0;z-index:10;background:#0b0e13ee;backdrop-filter:blur(6px);
+        border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;
+        padding:10px 16px;margin:-20px -20px 16px}
+  .topbar b{color:var(--acc)}
+  .lang button{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+        padding:6px 14px;cursor:pointer;font-size:14px;margin-inline-start:6px}
+  .lang button.on{background:#0d3550;border-color:#1d5577;color:var(--acc)}
+  h1{font-size:31px;margin:.3em 0;line-height:1.25}
+  h2{font-size:22px;margin:1.4em 0 .4em;color:var(--acc)}
+  h3{font-size:17px;margin:1em 0 .3em;color:var(--teal)}
+  p{color:#cdd6e2} .mut{color:var(--mut);font-size:14px}
+  .hero{background:linear-gradient(160deg,#1b2330,#11151c);border:1px solid var(--line);border-radius:18px;padding:26px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+  .num{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .num b{color:var(--acc)}
+  .eq{display:block;background:#0c1118;border:1px solid var(--line);border-inline-start:3px solid var(--acc);
+      border-radius:8px;padding:12px 14px;margin:10px 0;color:#dfe8f3;overflow-x:auto;
+      font-family:"Cascadia Code",Consolas,monospace;font-size:15px;direction:ltr;text-align:left}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+  th{background:var(--card2);color:var(--acc)}
+  .tag{font-size:12px;padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .ok{background:#10331f;color:#46d67e}.near{background:#2e2a12;color:#e9c44a}.no{background:#3a1620;color:#ff8089}
+  .lab{background:linear-gradient(160deg,#151b24,#10141b);border:1px solid #2a3a4d;border-radius:16px;padding:20px}
+  label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+  select,input[type=number]{background:#0c1118;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:15px;width:100%}
+  input[type=range]{width:100%;accent-color:var(--acc)}
+  .ctrls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:680px){.ctrls{grid-template-columns:1fr}}
+  .out{font-family:Consolas,monospace;font-size:15px;background:#0c1118;border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px;direction:ltr;text-align:left}
+  .out span{color:var(--acc)}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-inline-end:6px}
+  .callout{border-radius:12px;padding:14px 16px;margin:12px 0;border:1px solid}
+  .c-good{background:#10260f;border-color:#264d1f}.c-bad{background:#2a1116;border-color:#5a2230}.c-info{background:#0d2230;border-color:#1d4a63}
+  .verdict{font-size:17px;font-weight:600}
+  ul{padding-inline-start:22px} li{margin:5px 0;color:#cdd6e2}
+  .pill{display:inline-block;font-size:12px;background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:3px 11px;margin:3px 4px 3px 0;color:var(--mut)}
+  footer{color:var(--mut);font-size:13px;text-align:center;margin:26px 0;border-top:1px solid var(--line);padding-top:16px}
+  .toc{font-size:14px} .toc a{color:var(--acc);text-decoration:none;margin-inline-end:14px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <b>True ALGO Levels — Decoded</b>
+    <div class="lang">
+      <button id="btnEN" class="on" onclick="setLang('en')">English</button>
+      <button id="btnAR" onclick="setLang('ar')">العربية</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1 data-en="The True ALGO levels, fully decoded" data-ar="مستويات True ALGO — مفكوكة بالكامل"></h1>
+    <p data-en="This page explains, end to end, exactly how the “Elite [True ALGO]” Daily / Weekly / Monthly levels are built for NQ, ES, QQQ and SQQQ — the inputs, the formula, what the secret constants actually mean, how we recovered them, and an honest answer to the real question: is this a genuine method, or just a well-marketed illusion?"
+       data-ar="تشرح هذه الصفحة، من البداية للنهاية، كيف تُبنى مستويات «Elite [True ALGO]» اليومية/الأسبوعية/الشهرية لـ NQ و ES و QQQ و SQQQ — المدخلات، المعادلة، ماذا تعني الثوابت السرّية فعلياً، كيف استخرجناها، وإجابة صريحة على السؤال الحقيقي: هل هي طريقة فعلية أم مجرّد وهم مُسوَّق جيداً؟"></p>
+    <p class="toc">
+      <a href="#s1" data-en="① The idea" data-ar="① الفكرة"></a>
+      <a href="#s2" data-en="② The formula" data-ar="② المعادلة"></a>
+      <a href="#s3" data-en="③ Decoding the constants" data-ar="③ فكّ الثوابت"></a>
+      <a href="#s4" data-en="④ How we found them" data-ar="④ كيف وجدناها"></a>
+      <a href="#s5" data-en="⑤ Sessions" data-ar="⑤ الجلسات"></a>
+      <a href="#s6" data-en="⑥ Weekly/Monthly" data-ar="⑥ أسبوعي/شهري"></a>
+      <a href="#s7" data-en="⑦ Real or illusion?" data-ar="⑦ حقيقة أم وهم؟"></a>
+      <a href="#s8" data-en="⑧ Accuracy" data-ar="⑧ الدقّة"></a>
+      <a href="#s9" data-en="⑨ Try it" data-ar="⑨ جرّب"></a>
+    </p>
+  </div>
+
+  <!-- 1 -->
+  <div class="card" id="s1">
+    <h2 data-en="① The core idea — three numbers from the first hour" data-ar="① الفكرة الأساسية — ثلاثة أرقام من الساعة الأولى"></h2>
+    <p data-en="Every level is built from the <b>first hour of the session</b>. The moment the session opens, the indicator records three numbers and freezes them after 60 minutes. Every level is then a fixed formula of those three numbers."
+       data-ar="كل مستوى يُبنى من <b>الساعة الأولى من الجلسة</b>. لحظة فتح الجلسة يسجّل المؤشر ثلاثة أرقام ويُجمّدها بعد ٦٠ دقيقة. ثم كل مستوى = معادلة ثابتة من هذه الأرقام الثلاثة."></p>
+    <div class="grid">
+      <div class="num"><b>O</b> — <span data-en="the session OPEN price (first bar of the session)" data-ar="سعر فتح الجلسة (أول شمعة)"></span></div>
+      <div class="num"><b>orH</b> — <span data-en="the HIGH of the first hour (opening range high)" data-ar="أعلى سعر في الساعة الأولى"></span></div>
+      <div class="num"><b>orL</b> — <span data-en="the LOW of the first hour (opening range low)" data-ar="أدنى سعر في الساعة الأولى"></span></div>
+      <div class="num"><b>up = orH − O&nbsp;&nbsp;,&nbsp;&nbsp;dn = O − orL</b><br><span class="mut" data-en="how far price pushed above / below the open in the first hour" data-ar="كم ارتفع/انخفض السعر عن الافتتاح في الساعة الأولى"></span></div>
+    </div>
+    <p class="mut" data-en="“Opening range” = the high-low band of the first hour of trading. It is a classic, well-documented intraday concept (the first hour sets the day's initial balance)."
+       data-ar="«نطاق الافتتاح» = نطاق أعلى-أدنى لأول ساعة تداول. مفهوم كلاسيكي وموثّق في التداول اليومي (الساعة الأولى تحدّد التوازن المبدئي لليوم)."></p>
+  </div>
+
+  <!-- 2 -->
+  <div class="card" id="s2">
+    <h2 data-en="② The universal formula" data-ar="② المعادلة الموحّدة"></h2>
+    <p data-en="There are four daily levels — two “Range” (far) and two “Intermediate” (near):" data-ar="هناك أربعة مستويات يومية — اثنان «Range» (بعيدة) واثنان «Intermediate» (قريبة):"></p>
+    <p><span class="pill" style="color:var(--up)">Range High (RH)</span><span class="pill" style="color:var(--inner)">Inter High (IH)</span><span class="pill" style="color:var(--innerlow)">Inter Low (IL)</span><span class="pill" style="color:var(--dn)">Range Low (RL)</span></p>
+    <p data-en="Each one is the same shape:" data-ar="كلٌّ منها بنفس الشكل:"></p>
+    <div class="eq">level = O + a·up + b·dn + c·O + k</div>
+    <p data-en="<b>a, b, c, k</b> are four fixed numbers (“the constants”) — a different set for each asset and each level. The indicator auto-detects the asset and picks the right set. That is the entire “algorithm”. Everything else on this page is about what those four numbers really are."
+       data-ar="<b>a, b, c, k</b> هي أربعة أرقام ثابتة («الثوابت») — مجموعة مختلفة لكل أصل وكل مستوى. المؤشر يكتشف الأصل ويختار المجموعة الصحيحة. هذه هي كل «الخوارزمية». وكل ما تبقّى في هذه الصفحة يدور حول ماهيّة هذه الأرقام الأربعة فعلاً."></p>
+  </div>
+
+  <!-- 3 -->
+  <div class="card" id="s3">
+    <h2 data-en="③ Decoding the constants — what they REALLY mean" data-ar="③ فكّ الثوابت — ماذا تعني فعلاً"></h2>
+    <p data-en="The constants look mysterious, but if you substitute up = orH−O and dn = O−orL into the formula and simplify, something striking happens:"
+       data-ar="تبدو الثوابت غامضة، لكن إذا عوّضت up = orH−O و dn = O−orL في المعادلة وبسّطت، يحدث شيء لافت:"></p>
+    <div class="eq">level = a·orH − b·orL + O·(1 − a + b + c) + k</div>
+    <p data-en="For every level, the measured constants make the open's coefficient <b>(1 − a + b + c) collapse to ≈ 0</b>. The session open <b>cancels out</b>. So the levels do NOT really depend on the open at all — they are just a fixed blend of the first-hour HIGH and LOW:"
+       data-ar="لكل مستوى، الثوابت المقيسة تجعل معامل الافتتاح <b>(1 − a + b + c) يساوي ≈ صفر</b>. سعر الافتتاح <b>يُلغى</b>. إذن المستويات لا تعتمد فعلياً على الافتتاح إطلاقاً — هي مجرّد مزيج ثابت من قمة وقاع الساعة الأولى:"></p>
+    <table>
+      <tr><th data-en="Level" data-ar="المستوى"></th><th data-en="What it actually equals" data-ar="ما يساويه فعلياً"></th><th data-en="Plain meaning" data-ar="المعنى البسيط"></th></tr>
+      <tr><td><b style="color:var(--up)">Range High</b></td><td>≈ orH × 1.01</td><td data-en="the first-hour HIGH, pushed up ~1–2%" data-ar="قمة الساعة الأولى، مرفوعة ~1–2%"></td></tr>
+      <tr><td><b style="color:var(--inner)">Inter High</b></td><td>≈ 0.64·orH + 0.36·orL</td><td data-en="a point ~64% of the way up the opening range" data-ar="نقطة عند ~64% من ارتفاع نطاق الافتتاح"></td></tr>
+      <tr><td><b style="color:var(--innerlow)">Inter Low</b></td><td>≈ 0.37·orH + 0.62·orL</td><td data-en="a point ~37% of the way up the opening range" data-ar="نقطة عند ~37% من ارتفاع نطاق الافتتاح"></td></tr>
+      <tr><td><b style="color:var(--dn)">Range Low</b></td><td>≈ orL × 0.98</td><td data-en="the first-hour LOW, pushed down ~1–2%" data-ar="قاع الساعة الأولى، منخفضة ~1–2%"></td></tr>
+    </table>
+    <div class="callout c-info">
+      <p style="margin:0" data-en="<b>In one sentence:</b> the indicator takes the first hour's high and low, draws two interior pivots (around 37% and 64% of the range) and two extended targets just outside the range (high +~1%, low −~2%). The “open” and the fancy constants are mathematically redundant decoration — the real inputs are just orH and orL."
+         data-ar="<b>بجملة واحدة:</b> المؤشر يأخذ قمة وقاع الساعة الأولى، ويرسم محورَين داخليين (حوالي 37% و 64% من النطاق) وهدفَين ممتدّين خارج النطاق بقليل (القمة +~1%، القاع −~2%). أما «الافتتاح» والثوابت المعقّدة فهي زخرفة رياضية زائدة — المدخلات الحقيقية هي فقط orH و orL."></p>
+    </div>
+    <p class="mut" data-en="(Exact multipliers differ slightly per asset — e.g. SQQQ, being a leveraged inverse ETF, is a bit wider. The QQQ numbers above are representative.)"
+       data-ar="(تختلف المضاعِفات قليلاً حسب الأصل — مثلاً SQQQ، كونه صندوقاً عكسياً برافعة، أوسع قليلاً. أرقام QQQ أعلاه تمثيلية.)"></p>
+  </div>
+
+  <!-- 4 -->
+  <div class="card" id="s4">
+    <h2 data-en="④ How the constants were determined — yes, there is an exact method" data-ar="④ كيف حُدِّدت الثوابت — نعم، هناك طريقة دقيقة"></h2>
+    <p data-en="The constants are not guessed. Because each level is an exact linear function of (orH, orL, O), they can be recovered precisely by <b>linear regression (least squares)</b>:"
+       data-ar="الثوابت ليست تخميناً. بما أن كل مستوى دالة خطّية دقيقة لـ (orH, orL, O)، يمكن استعادتها بدقّة عبر <b>الانحدار الخطّي (المربّعات الصغرى)</b>:"></p>
+    <ul>
+      <li data-en="<b>Collect data:</b> for ~55 historical sessions per asset, take the first-hour high/low/open as inputs and the indicator's published level as the output." data-ar="<b>جمع البيانات:</b> لـ ~٥٥ جلسة تاريخية لكل أصل، نأخذ قمة/قاع/افتتاح الساعة الأولى كمدخلات، والمستوى المنشور من المؤشر كمخرَج."></li>
+      <li data-en="<b>Solve:</b> find the a, b, c, k that reproduce the outputs with the smallest error." data-ar="<b>الحل:</b> نجد a, b, c, k التي تُعيد إنتاج المخرجات بأقل خطأ."></li>
+      <li data-en="<b>Result:</b> the fit error is essentially zero (~0.00). That near-perfect fit is the proof the level truly is this simple linear formula — there is no hidden randomness." data-ar="<b>النتيجة:</b> خطأ المطابقة صفر تقريباً (~0.00). هذه المطابقة شبه التامة هي الدليل أن المستوى فعلاً هذه المعادلة الخطّية البسيطة — لا توجد عشوائية خفيّة."></li>
+    </ul>
+    <h3 data-en="The one detail that mattered: the data source" data-ar="التفصيل الوحيد الذي صنع الفرق: مصدر البيانات"></h3>
+    <p data-en="The original indicator runs on <b>TradingView's consolidated candles</b> (aggregated across all exchanges). We first calibrated on a single-exchange feed and the daily levels were off — because a single venue <b>misses pre-market trades</b>, so its first-hour high/low (especially before 9:30) are too narrow. Re-harvesting the opening ranges directly from TradingView fixed it: the levels then matched the original almost exactly. Weekly/Monthly were never affected because they don't use the first-hour range (see next section)."
+       data-ar="المؤشر الأصلي يعمل على <b>شموع TradingView المُجمّعة</b> (من كل البورصات). عايرنا أولاً على بيانات بورصة واحدة فكانت المستويات اليومية مغلوطة — لأن البورصة الواحدة <b>تُفوّت صفقات ما قبل السوق</b>، فيكون نطاق ساعتها الأولى (خاصة قبل 9:30) ضيّقاً جداً. إعادة سحب نطاقات الافتتاح مباشرةً من TradingView صحّحت ذلك: عندها طابقت المستويات الأصلي بدقة شبه تامة. الأسبوعي/الشهري لم يتأثّرا أصلاً لأنهما لا يستخدمان نطاق الساعة الأولى (انظر القسم التالي)."></p>
+  </div>
+
+  <!-- 5 -->
+  <div class="card" id="s5">
+    <h2 data-en="⑤ When does the “first hour” start? (per asset)" data-ar="⑤ متى تبدأ «الساعة الأولى»؟ (حسب الأصل)"></h2>
+    <p data-en="The clock time of the opening range depends on the asset and session. All times are New York (ET), DST-aware:" data-ar="توقيت نطاق الافتتاح يعتمد على الأصل والجلسة. كل الأوقات بتوقيت نيويورك (ET) مع مراعاة التوقيت الصيفي:"></p>
+    <table>
+      <tr><th data-en="Asset" data-ar="الأصل"></th><th data-en="Type" data-ar="النوع"></th><th data-en="Daily open & first hour" data-ar="الافتتاح اليومي والساعة الأولى"></th></tr>
+      <tr><td>NQ, ES</td><td data-en="Futures (CME)" data-ar="عقود (CME)"></td><td>18:00 → 19:00 ET</td></tr>
+      <tr><td>QQQ, SQQQ</td><td>ETH (<span data-en="extended" data-ar="ممتدّة"></span>)</td><td>04:00 → 05:00 ET</td></tr>
+      <tr><td>QQQ, SQQQ</td><td>RTH (<span data-en="regular" data-ar="عادية"></span>)</td><td>09:30 → 10:30 ET</td></tr>
+    </table>
+    <p class="mut" data-en="Important nuance we discovered: for ETFs the DAILY level uses the session open (04:00 ETH or 09:30 RTH), but the WEEKLY and MONTHLY levels always anchor to the 09:30 regular-session open of the first day of the week/month."
+       data-ar="فارق مهم اكتشفناه: في صناديق ETF يستخدم المستوى اليومي افتتاح الجلسة (04:00 ETH أو 09:30 RTH)، لكن المستويات الأسبوعية والشهرية ترتكز دائماً على افتتاح الجلسة العادية 09:30 لأول يوم في الأسبوع/الشهر."></p>
+  </div>
+
+  <!-- 6 -->
+  <div class="card" id="s6">
+    <h2 data-en="⑥ Weekly & Monthly — fixed percentage bands" data-ar="⑥ الأسبوعي والشهري — أشرطة نسبية ثابتة"></h2>
+    <p data-en="Weekly and monthly levels are even simpler. The opening-range terms vanish (a = b = 0), leaving only level = open × (1 + c). They are just <b>fixed percentage bands around the week's / month's open price</b>:"
+       data-ar="المستويات الأسبوعية والشهرية أبسط. تختفي حدود نطاق الافتتاح (a = b = 0)، ويبقى فقط level = open × (1 + c). أي أنها مجرّد <b>أشرطة نسبية ثابتة حول سعر افتتاح الأسبوع/الشهر</b>:"></p>
+    <table>
+      <tr><th></th><th style="color:var(--up)">Range High</th><th style="color:var(--inner)">Inter High</th><th style="color:var(--innerlow)">Inter Low</th><th style="color:var(--dn)">Range Low</th></tr>
+      <tr><td>QQQ — <span data-en="weekly" data-ar="أسبوعي"></span></td><td>+1.96%</td><td>+0.94%</td><td>−0.95%</td><td>−1.79%</td></tr>
+      <tr><td>QQQ — <span data-en="monthly" data-ar="شهري"></span></td><td>+3.58%</td><td>+2.00%</td><td>−1.31%</td><td>−2.69%</td></tr>
+      <tr><td>SQQQ — <span data-en="weekly" data-ar="أسبوعي"></span></td><td>+4.67%</td><td>+1.64%</td><td>−3.26%</td><td>−5.47%</td></tr>
+      <tr><td>SQQQ — <span data-en="monthly" data-ar="شهري"></span></td><td>+7.51%</td><td>+3.03%</td><td>−7.09%</td><td>−11.75%</td></tr>
+    </table>
+    <p class="mut" data-en="These percentages are static — they describe the asset's typical past range, like a rough “expected move”. SQQQ's bands are far wider because it is a 3× leveraged inverse ETF (about 3× the volatility of QQQ)."
+       data-ar="هذه النسب ثابتة — تصف المدى التاريخي المعتاد للأصل، كـ«حركة متوقّعة» تقريبية. أشرطة SQQQ أوسع بكثير لأنه صندوق عكسي برافعة ٣× (تقلّب يقارب ٣ أضعاف QQQ)."></p>
+  </div>
+
+  <!-- 7 -->
+  <div class="card" id="s7">
+    <h2 data-en="⑦ The real question: a genuine method, or an illusion?" data-ar="⑦ السؤال الحقيقي: طريقة فعلية أم وهم؟"></h2>
+    <p data-en="Honest answer: it is a <b>real, legitimate framework wrapped in proprietary marketing</b>. Both sides are true at once — here is exactly which part is real and which part is illusion."
+       data-ar="الإجابة الصريحة: هي <b>إطار حقيقي ومشروع مغلّف بتسويق احتكاري</b>. الجانبان صحيحان معاً — وإليك بالضبط أيّ جزء حقيقي وأيّ جزء وهم."></p>
+
+    <div class="callout c-good">
+      <h3 style="margin-top:0;color:var(--good)" data-en="✔ What is REAL (a genuine school of thought)" data-ar="✔ ما هو حقيقي (مدرسة فعلية)"></h3>
+      <ul>
+        <li data-en="<b>The opening range is a real, documented concept.</b> Trading the first hour's high/low (Opening Range Breakout, Crabel, Mark Fisher's ACD) is decades old and widely used. Building levels from orH/orL is legitimate." data-ar="<b>نطاق الافتتاح مفهوم حقيقي وموثّق.</b> التداول على قمة/قاع الساعة الأولى (Opening Range Breakout، كرابيل، طريقة ACD لمارك فيشر) قديم ومستخدَم على نطاق واسع. بناء مستويات من orH/orL أمر مشروع."></li>
+        <li data-en="<b>The levels are real reference points.</b> The first-hour high/low are prices many traders watch, so orders and stops cluster there — they genuinely tend to act as support/resistance, partly self-fulfilling." data-ar="<b>المستويات نقاط مرجعية حقيقية.</b> قمة/قاع الساعة الأولى أسعار يراقبها كثير من المتداولين، فتتجمّع الأوامر ووقف الخسارة عندها — فتميل فعلاً للعمل كدعم/مقاومة، وجزئياً تحقّق ذاتها." ></li>
+        <li data-en="<b>It is fully deterministic and rule-based.</b> Same inputs → same levels, every time. No black box, no curve-fitting per day." data-ar="<b>محدَّد بالكامل وقائم على قواعد.</b> نفس المدخلات → نفس المستويات، في كل مرة. لا صندوق أسود، ولا تركيب منحنى يومي." ></li>
+        <li data-en="<b>Weekly/Monthly bands behave like an “expected move.”</b> Fixed % ranges around the open are a crude but real volatility-band idea (similar in spirit to options-implied ranges)." data-ar="<b>أشرطة الأسبوعي/الشهري تتصرّف كـ«حركة متوقّعة».</b> نطاقات نسبية ثابتة حول الافتتاح فكرة شريط تقلّب بدائية لكنها حقيقية (شبيهة روحاً بالنطاقات الضمنية للخيارات)." ></li>
+      </ul>
+    </div>
+
+    <div class="callout c-bad">
+      <h3 style="margin-top:0;color:var(--bad)" data-en="✗ Where the illusion is (the marketing layer)" data-ar="✗ أين يكمن الوهم (طبقة التسويق)"></h3>
+      <ul>
+        <li data-en="<b>The constants are static, the market is not.</b> ×1.01, ×0.98, 64/36 are fixed numbers fit to past average behaviour. A constant percentage has no guaranteed forward edge — what held on average will not hold on any given day." data-ar="<b>الثوابت جامدة، والسوق ليس كذلك.</b> ×1.01، ×0.98، 64/36 أرقام ثابتة مُركَّبة على متوسط السلوك الماضي. النسبة الثابتة لا تملك أفضليّة مستقبلية مضمونة — ما صحّ في المتوسط لن يصحّ في يوم بعينه." ></li>
+        <li data-en="<b>The bands ignore current volatility.</b> A static “monthly ±3.6%” does not adapt to VIX/ATR. In a calm month it is too wide; in a crisis month far too narrow. Real expected move scales with implied volatility." data-ar="<b>الأشرطة تتجاهل التقلّب الحالي.</b> «شهري ±3.6%» الثابت لا يتكيّف مع VIX/ATR. في شهر هادئ يكون واسعاً جداً؛ وفي شهر أزمة ضيّقاً جداً. الحركة المتوقّعة الحقيقية تتناسب مع التقلّب الضمني." ></li>
+        <li data-en="<b>“True ALGO / Elite” implies a sophisticated algorithm.</b> In reality it is four fixed numbers and a one-line linear formula on the opening range — fully reverse-engineerable, as this very page proves." data-ar="<b>«True ALGO / Elite» يوحي بخوارزمية متطوّرة.</b> الحقيقة أنها أربعة أرقام ثابتة ومعادلة خطّية من سطر واحد على نطاق الافتتاح — قابلة للعكس بالكامل، كما تُثبت هذه الصفحة نفسها." ></li>
+        <li data-en="<b>Reproducing the levels ≠ the levels being profitable.</b> Our “near-zero error” means we matched the indicator's OUTPUT exactly. It says nothing about whether price will respect those levels or whether trading them makes money. No level here predicts direction." data-ar="<b>إعادة إنتاج المستويات ≠ ربحيّة المستويات.</b> «الخطأ شبه الصفري» يعني أننا طابقنا مخرَجات المؤشر تماماً. وهذا لا يقول شيئاً عمّا إذا كان السعر سيحترم تلك المستويات أو أن تداولها يربح. لا يوجد مستوى هنا يتنبّأ بالاتجاه." ></li>
+      </ul>
+    </div>
+
+    <div class="callout c-info">
+      <p class="verdict" data-en="Verdict: a real geometric framework (opening range + volatility bands) with no magic. The levels are useful as context and reference zones — places where reactions are more likely because many eyes are on them — but they are not predictions and carry no built-in edge. Use them for confluence and risk planning, not as buy/sell signals. The intelligence is in how you use the zones, not in the constants."
+         data-ar="الخلاصة: إطار هندسي حقيقي (نطاق افتتاح + أشرطة تقلّب) بلا سحر. المستويات مفيدة كسياق ومناطق مرجعية — أماكن تزداد فيها احتمالية ردّ الفعل لأن أعيناً كثيرة عليها — لكنها ليست تنبّؤات ولا تحمل أفضليّة ذاتية. استخدمها للتوافق (confluence) وإدارة المخاطر، لا كإشارات شراء/بيع. الذكاء في كيفية استخدامك للمناطق، لا في الثوابت."></p>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="card" id="s8">
+    <h2 data-en="⑧ How accurate is the reconstruction?" data-ar="⑧ ما مدى دقّة إعادة البناء؟"></h2>
+    <table>
+      <tr><th data-en="Asset / session" data-ar="الأصل / الجلسة"></th><th data-en="Intermediate (near)" data-ar="الوسطية (القريبة)"></th><th data-en="Range (far)" data-ar="النطاقية (البعيدة)"></th><th>W / M</th></tr>
+      <tr><td>NQ (Fut)</td><td><span class="tag ok">≈0</span></td><td><span class="tag near">~0.006%</span></td><td><span class="tag ok">≈0</span></td></tr>
+      <tr><td>ES (Fut)</td><td><span class="tag ok">≈0</span></td><td><span class="tag near">~0.01%</span></td><td><span class="tag ok">0.00</span></td></tr>
+      <tr><td>QQQ ETH / RTH</td><td><span class="tag ok">≈0</span></td><td><span class="tag ok">≈0</span></td><td><span class="tag ok">0.00</span></td></tr>
+      <tr><td>SQQQ ETH / RTH</td><td><span class="tag ok">≈0</span></td><td><span class="tag ok">≈0</span></td><td><span class="tag ok">0.00</span></td></tr>
+    </table>
+    <p class="mut" data-en="Every level now matches the original almost exactly across all four assets and both sessions, verified live against the original indicator on TradingView. The key was calibrating against TradingView's consolidated candles — the same source the original runs on."
+       data-ar="كل مستوى يطابق الآن الأصلي بدقة شبه تامة لكل الأصول الأربعة والجلستين، مُتحقَّق منه حيّاً مقابل المؤشر الأصلي على TradingView. السرّ كان المعايرة على شموع TradingView المُجمّعة — نفس المصدر الذي يعمل عليه الأصلي."></p>
+  </div>
+
+  <!-- 9 INTERACTIVE -->
+  <div class="lab" id="s9">
+    <h2 style="margin-top:0" data-en="⑨ 🧪 Try it — build the daily levels yourself" data-ar="⑨ 🧪 جرّب — ابنِ المستويات اليومية بنفسك"></h2>
+    <div class="ctrls">
+      <div><label data-en="Asset / session" data-ar="الأصل / الجلسة"></label>
+        <select id="asset" onchange="calc()">
+          <option value="NQ">NQ (Futures)</option><option value="ES">ES (Futures)</option>
+          <option value="QQQ_ETH" selected>QQQ ETH</option><option value="QQQ_RTH">QQQ RTH</option>
+          <option value="SQQQ_ETH">SQQQ ETH</option><option value="SQQQ_RTH">SQQQ RTH</option>
+        </select></div>
+      <div><label data-en="Open (O)" data-ar="الافتتاح (O)"></label><input type="number" id="o" value="730" step="1" oninput="calc()"></div>
+      <div></div>
+      <div><label><span data-en="First-hour HIGH above open (up)" data-ar="قمة الساعة الأولى فوق الافتتاح (up)"></span>: <span id="hl" style="color:var(--acc)">3</span></label><input type="range" id="h" min="0" max="40" value="3" step="0.5" oninput="calc()"></div>
+      <div><label><span data-en="First-hour LOW below open (dn)" data-ar="قاع الساعة الأولى تحت الافتتاح (dn)"></span>: <span id="ll" style="color:var(--acc)">3</span></label><input type="range" id="l" min="0" max="40" value="3" step="0.5" oninput="calc()"></div>
+    </div>
+    <div class="out" id="out"></div>
+    <p class="mut" style="margin-bottom:0" data-en="Notice: as you change the open while keeping up/dn fixed, the spacing of the levels barely changes — because (as shown in ③) the levels really track the first-hour high (O+up) and low (O−dn), not the open itself."
+       data-ar="لاحظ: عند تغيير الافتتاح مع تثبيت up/dn، تكاد تباعد المستويات لا يتغيّر — لأن المستويات (كما في ③) تتبع فعلياً قمة الساعة الأولى (O+up) وقاعها (O−dn)، لا الافتتاح نفسه."></p>
+  </div>
+
+  <footer data-en="Educational • reverse-engineered from price data • not financial advice. Levels are reference zones, not predictions."
+          data-ar="تعليمي • مُستخرج من بيانات الأسعار • ليس نصيحة مالية. المستويات مناطق مرجعية وليست تنبّؤات."></footer>
+</div>
+
+<script>
+// daily midpoint coefficients [a,b,c,k] per asset (recovered by regression from TradingView data)
+const COEFFS = {"NQ":{"RH":[0.998043,0.007895,0.006993,0.297676],"IH":[0.642223,-0.361074,0.003297,0],"IL":[0.370747,-0.625466,-0.003787,0],"RL":[0.003561,-0.98685,-0.006716,-3.476536]},
+"ES":{"RH":[1.013353,-0.002822,0.005637,0.805718],"IH":[0.643532,-0.361365,0.002501,-0.012033],"IL":[0.373054,-0.626007,-0.003848,-0.042855],"RL":[-0.001498,-0.986081,-0.006042,-1.047084]},
+"QQQ_ETH":{"RH":[1.007535,0.0,0.007535,-0.0],"IH":[0.642546,-0.360199,0.002745,-0.0],"IL":[0.370934,-0.623951,-0.005115,0.0],"RL":[0.030984,-0.985717,-0.007903,-0.40305]},
+"QQQ_RTH":{"RH":[1.007535,-0.0,0.007535,0.0],"IH":[0.642546,-0.360199,0.002745,-0.0],"IL":[0.370934,-0.623951,-0.005115,-0.0],"RL":[-0.001343,-0.997408,-0.008675,0.10939]},
+"SQQQ_ETH":{"RH":[1.0218,0.0,0.0218,-0.0],"IH":[0.659518,-0.351722,0.011241,-0.0],"IL":[0.380731,-0.609268,-0.010001,0.0],"RL":[-0.0,-0.978355,-0.021645,-0.0]},
+"SQQQ_RTH":{"RH":[1.028036,-2.1e-05,0.021616,0.000677],"IH":[0.659519,-0.351722,0.011241,0.0],"IL":[0.380732,-0.609268,-0.010001,0.0],"RL":[0.0,-0.978355,-0.021645,0.0]}};
+const NAME={en:{RH:"Range High",IH:"Inter High",IL:"Inter Low",RL:"Range Low"},ar:{RH:"قمة النطاق",IH:"وسطي علوي",IL:"وسطي سفلي",RL:"قاع النطاق"}};
+const COL={RH:"#00e676",IH:"#ffd54f",IL:"#ff9800",RL:"#ff1744"};
+let LANG='en';
+function setLang(l){
+  LANG=l; document.documentElement.lang=l; document.body.classList.toggle('rtl',l==='ar');
+  document.getElementById('btnEN').classList.toggle('on',l==='en');
+  document.getElementById('btnAR').classList.toggle('on',l==='ar');
+  document.querySelectorAll('[data-en]').forEach(e=>{
+    const t=e.getAttribute('data-'+l); if(t!==null) e.innerHTML=t;
+  });
+  calc();
+}
+function calc(){
+  const a=document.getElementById('asset').value, O=+document.getElementById('o').value;
+  const up=+document.getElementById('h').value, dn=+document.getElementById('l').value;
+  document.getElementById('hl').textContent='+'+up; document.getElementById('ll').textContent='−'+dn;
+  const c=COEFFS[a]; const f=k=>{const x=c[k];return O+x[0]*up+x[1]*dn+x[2]*O+x[3];};
+  const orH=(O+up).toFixed(2), orL=(O-dn).toFixed(2);
+  let html = (LANG==='ar'?'قمة الساعة الأولى orH = ':'first-hour high orH = ')+'<span>'+orH+'</span> &nbsp; '+(LANG==='ar'?'القاع orL = ':'low orL = ')+'<span>'+orL+'</span><br><br>';
+  ['RH','IH','IL','RL'].forEach(k=>{
+    html+=`<span class="swatch" style="background:${COL[k]}"></span>${NAME[LANG][k]} = <span>${f(k).toFixed(2)}</span><br>`;
+  });
+  document.getElementById('out').innerHTML=html;
+}
+setLang('en');
+</script>
+</body>
+</html>
